@@ -10,6 +10,8 @@ Ein konversationeller KI-Agent, der Geschäftsdokumente (PDFs) über eine IDP-Pi
 
 Entwickelt als Portfolio-Projekt zur Demonstration von Kompetenzen in IDP, Conversational AI und Geschäftsprozessautomatisierung.
 
+![Workflow Overview](docs/images/workflow-overview.png)
+
 ---
 
 ## Demo — Testergebnisse
@@ -25,6 +27,8 @@ Der Agent wurde anhand von 5 Schwierigkeitsstufen mit dem Weidmüller Konzernabs
 | 5 | Sprachwechsel (Deutsch / Englisch) | ✅ Bestanden |
 
 Der Agent zitierte korrekt rechtliche Ausnahmen (§286 Abs. 4 HGB) bei Fragen zu Einzelgehältern, demonstrierte sitzungsübergreifendes Gedächtnis ohne erneute Unternehmensnennung und wechselte je nach Kontext zwischen den Unternehmens-Vektorspeichern.
+
+![Chat Demo](docs/images/chat-demo.png)
 
 ---
 
@@ -69,6 +73,8 @@ Kärcher PGVector Store     → {"filename": "kaercher_vertriebs.pdf"}
 CLAAS PGVector Store       → {"filename": "claas_jahresabschluss.pdf"}
 ```
 
+![PGVector Metadata Filter](docs/images/pgvector-filter.png)
+
 ---
 
 ## Tech Stack
@@ -77,7 +83,7 @@ CLAAS PGVector Store       → {"filename": "claas_jahresabschluss.pdf"}
 |---|---|
 | Workflow-Orchestrierung | n8n |
 | Chat-Interface | n8n Built-in Chat / Telegram Bot API |
-| PDF-Textextraktion | Text Extractor — [siehe Begleitprojekt](https://github.com/Javier-Briceno/PDF-Text-Extractor-Workflow) |
+| PDF-Textextraktion | Text Extractor — [siehe Begleitprojekt](https://github.com/your-username/your-text-extractor-repo) |
 | Textsplitting | Recursive Character Text Splitter (chunk=1000, overlap=150) |
 | Embeddings | OpenAI text-embedding-3-small |
 | Vektordatenbank | PostgreSQL + pgvector |
@@ -135,7 +141,7 @@ Keine `.env`-Datei erforderlich. Alle Zugangsdaten werden über den integrierten
 
 ```bash
 # 1. Repository klonen
-git clone https://github.com/Javier-Briceno/conversational-doc-agent.git
+git clone https://github.com/your-username/conversational-doc-agent.git
 cd conversational-doc-agent
 
 # 2. n8n öffnen und Workflow importieren
@@ -168,9 +174,7 @@ A conversational AI agent that processes business documents (PDFs) through an ID
 
 Built as a portfolio project demonstrating competence in IDP, Conversational AI, and business process automation.
 
----
-
-## Demo — Test Results
+![Workflow Overview](docs/images/workflow-overview.png)
 
 The agent was validated across 5 difficulty levels using the Weidmüller Konzernabschluss 2021:
 
@@ -183,6 +187,8 @@ The agent was validated across 5 difficulty levels using the Weidmüller Konzern
 | 5 | Language switching (German / English) | ✅ Passed |
 
 The agent correctly cited legal exemptions (§286 Abs. 4 HGB) when asked about individual CEO salaries, demonstrated cross-turn memory without re-stating the company name, and switched between company vector stores based on context.
+
+![Chat Demo](docs/images/chat-demo.png)
 
 ---
 
@@ -227,6 +233,8 @@ Kärcher PGVector Store     → {"filename": "kaercher_vertriebs.pdf"}
 CLAAS PGVector Store       → {"filename": "claas_jahresabschluss.pdf"}
 ```
 
+![PGVector Metadata Filter](docs/images/pgvector-filter.png)
+
 ---
 
 ## Tech Stack
@@ -235,7 +243,7 @@ CLAAS PGVector Store       → {"filename": "claas_jahresabschluss.pdf"}
 |---|---|
 | Workflow orchestration | n8n |
 | Chat interface | n8n built-in chat / Telegram Bot API |
-| PDF text extraction | Text Extractor — [see companion project](https://github.com/Javier-Briceno/PDF-Text-Extractor-Workflow) |
+| PDF text extraction | Text Extractor — [see companion project](https://github.com/your-username/your-text-extractor-repo) |
 | Text splitting | Recursive Character Text Splitter (chunk=1000, overlap=150) |
 | Embeddings | OpenAI text-embedding-3-small |
 | Vector database | PostgreSQL + pgvector |
@@ -293,7 +301,7 @@ No `.env` file is needed. All credentials are managed through n8n's built-in cre
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/Javier-Briceno/conversational-doc-agent.git
+git clone https://github.com/your-username/conversational-doc-agent.git
 cd conversational-doc-agent
 
 # 2. Open n8n and import the workflow
