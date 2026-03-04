@@ -1,0 +1,556 @@
+{
+  "name": "Conversational Document Intelligence Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {
+          "allowFileUploads": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        64
+      ],
+      "id": "81e29b26-0016-4d78-a970-063d7a6f9824",
+      "name": "When chat message received",
+      "webhookId": "161808e6-49af-45af-b920-f0a18055f68d"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "514ea8e6-5805-4441-94d3-b9679ebede74",
+              "leftValue": "={{ Object.keys($json.files) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        64
+      ],
+      "id": "d0f5a634-ef4a-46cc-ac27-c02fd06ed3ff",
+      "name": "Is a Document?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "vpvzEqPt0gc0x7sg",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/vpvzEqPt0gc0x7sg",
+          "cachedResultName": "Text Extractor from PDFs"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        -96
+      ],
+      "id": "91b64f17-3f18-4b07-95b0-3ba78ca2a566",
+      "name": "Call 'Text Extractor from PDFs'"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "document_chunks",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "16a98292-4590-430b-91dc-de1cf3017856",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "FXEG0dQzOuAcjlhc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        128
+      ],
+      "id": "e8de8c71-8d00-4838-898c-4af49feab0c4",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "43uQLsFrlATdPps2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "filename",
+                "value": "={{ $json.file_name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        128
+      ],
+      "id": "b2962ede-3043-4060-ae9d-391213c767e4",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 150,
+        "options": {
+          "splitCode": "markdown"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        336
+      ],
+      "id": "d8658ad8-ea74-4cda-9acc-102527b37055",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "IMPORTANT: You MUST use the document search tool for EVERY user \nquestion, without exception. Never answer from your own knowledge.\nAlways search first, then answer based on the results.\nYou are a financial document analyst assistant. You have access to a \nvector database containing business documents (Jahresabschlüsse, \nKonzernabschlüsse) from German companies such as Weidmüller, CLAAS, \nand Kärcher.\n\n## Your behavior\n- Always search the document database before answering any question\n- Answer based ONLY on information found in the retrieved documents\n- If the information is not in the documents, say explicitly: \n  \"I could not find this information in the available documents\"\n- Never invent figures, dates, or financial data\n- Be precise with numbers — always include units (TEUR, €, %)\n\n## Response format\n- ALWAYS respond in the exact same language the user used in their \nquestion, regardless of the language of the source documents.\nIf the user writes in English → respond in English.\nIf the user writes in German → respond in German.\nYou may quote short fragments from documents in their original \nlanguage, but your explanation must always match the user's language.\n- For financial figures, always mention the source document and year\n- Keep answers concise but complete\n- If multiple documents are relevant, compare them explicitly\n- Always respond in plain text. Do not use Markdown formatting — no headers, no bullet points, no bold, no asterisks, no pound signs. Use plain numbered lists or simple line breaks to structure your answers when needed.\n\n## You can also perform actions when the user requests them\n- Extract specific data (dates, figures, company names)\n- Summarize a document or section\n- Compare figures across documents or years"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        288
+      ],
+      "id": "13d9bd78-1264-4482-b200-c968968453a8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        624
+      ],
+      "id": "71770466-3a31-4c61-9f51-f41976ebc488",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "43uQLsFrlATdPps2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 4
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        432,
+        496
+      ],
+      "id": "429b0873-4734-4cbf-b055-3b95b4904c26",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "FXEG0dQzOuAcjlhc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {
+          "maxTokensToSample": 1000,
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        480
+      ],
+      "id": "1b24bdf9-4a6e-4aed-8ab3-1e3f6cbf2b90",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "bmJJVz53sEeLUr3G",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "PGVector Retrieve — Weidmüller\nPerforms semantic search over chunked embeddings from the Weidmüller Konzernabschluss 2021 (Weidmüller Holding AG & Co. KG). Metadata filter: {\"filename\": \"weidmuller_konzern_2021.pdf\"}. Used when the user's query references Weidmüller.",
+        "tableName": "document_chunks",
+        "topK": 3,
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "filename",
+                "value": "weidmuller_konzern_2021.pdf"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        496
+      ],
+      "id": "57f1ab0b-4ccc-4492-baae-c14004e7aff9",
+      "name": "Weidmüller Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "FXEG0dQzOuAcjlhc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "PGVector Retrieve — Kärcher\nPerforms semantic search over chunked embeddings from the Kärcher sales company financial statements (Alfred Kärcher Vertriebs-GmbH, Winnenden). Metadata filter: {\"filename\": \"kaercher_vertriebs.pdf\"}. Used when the user's query references Kärcher.",
+        "tableName": "document_chunks",
+        "topK": 3,
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "filename",
+                "value": "kaercher_konzern_2021.pdf"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        864,
+        496
+      ],
+      "id": "fbc138bf-00a5-4fc9-a673-6654ebe457b5",
+      "name": "Kärcher Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "FXEG0dQzOuAcjlhc",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        640
+      ],
+      "id": "dd9a00e5-945b-4609-9f57-4749651c1293",
+      "name": "Embeddings OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "43uQLsFrlATdPps2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1184,
+        640
+      ],
+      "id": "298af3af-d0f1-4147-8d70-1fd04458dccf",
+      "name": "Embeddings OpenAI3",
+      "credentials": {
+        "openAiApi": {
+          "id": "43uQLsFrlATdPps2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "PGVector Retrieve — CLAAS\nPerforms semantic search over chunked embeddings from the CLAAS annual financial statements (CLAAS Selbstfahrende Erntemaschinen GmbH). Metadata filter: {\"filename\": \"claas_jahresabschluss.pdf\"}. Used when the user's query references CLAAS.",
+        "tableName": "document_chunks",
+        "topK": 3,
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "filename",
+                "value": "class_konzern_2021.pdf"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1168,
+        496
+      ],
+      "id": "f2aba261-633b-44cd-90c2-0df7493a9022",
+      "name": "Class Postgres PGVector Store1",
+      "credentials": {
+        "postgres": {
+          "id": "FXEG0dQzOuAcjlhc",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Is a Document?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is a Document?": {
+      "main": [
+        [
+          {
+            "node": "Call 'Text Extractor from PDFs'",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Text Extractor from PDFs'": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Weidmüller Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weidmüller Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kärcher Postgres PGVector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Kärcher Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Class Postgres PGVector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Class Postgres PGVector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "dde87490-3437-4fb3-a2a4-5b61693f3fbf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "19b5c45878e0c37a2dfdebb10fe6ad07185f82630e5b3f64f267192bd053cf0b"
+  },
+  "id": "JrFzzXMPr2bKMpZ4kWQ7q",
+  "tags": []
+}

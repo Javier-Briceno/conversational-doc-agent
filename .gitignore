@@ -1,0 +1,13 @@
+# PDFs
+docs/samples/
+
+# Environment files (just in case)
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# n8n local data (if you ever run n8n from this folder)
+.n8n/
